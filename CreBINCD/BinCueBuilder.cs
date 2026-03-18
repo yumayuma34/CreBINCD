@@ -23,8 +23,8 @@ public static class BinCueBuilder
     {
         int seconds = offset / CD_FRAMES_PER_SECOND;
         int minutes = seconds / 60;
-
         int frames = offset - (seconds * CD_FRAMES_PER_SECOND);
+
         seconds -= minutes * 60;
 
         return $"{minutes:D2}:{seconds:D2}:{frames:D2}";
@@ -34,11 +34,18 @@ public static class BinCueBuilder
     {
         using (var reader = new WaveFileReader(path))
         {
-            byte[] buffer = new byte[reader.Length];
-            reader.Read(buffer, 0, buffer.Length);
+            int bytesPerSample = reader.WaveFormat.BitsPerSample / 8;
+            int channels = reader.WaveFormat.Channels;
 
-            int frames = (int)(reader.SampleCount / reader.WaveFormat.Channels);
-            return (buffer, frames);
+            int totalSamples = (int)reader.SampleCount;
+            int totalBytes = totalSamples * bytesPerSample * channels;
+
+            byte[] pcm = new byte[totalBytes];
+            reader.Read(pcm, 0, totalBytes);
+
+            int frames = totalSamples / 588;
+
+            return (pcm, frames);
         }
     }
 
@@ -64,7 +71,7 @@ public static class BinCueBuilder
                 cueLines.Add($"    TITLE \"{Path.GetFileNameWithoutExtension(wavFiles[i])}\"");
                 cueLines.Add($"    INDEX 01 {CalculateIndex(offset)}");
 
-                offset += (int)Math.Ceiling(frames / 588.0);
+                offset += (int)Math.Ceiling(frames / 1.0);
             }
         }
 
