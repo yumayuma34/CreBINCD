@@ -1,4 +1,5 @@
 ##    CreBINCD
+<img width="256" height="256" alt="CreBINCD" src="https://github.com/user-attachments/assets/6d5c6ae6-0c14-4c6e-ab98-7b2a726a9a34" />
 
 CreBINCD is a Windows tool that allows you to easily create BIN/CUE format CD images from multiple audio files.
 It reads audio files such as WAV, MP3, FLAC, OGG, and AAC, converts them to WAV using FFmpeg, and finally generates the BIN/CUE files.
