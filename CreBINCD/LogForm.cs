@@ -26,7 +26,7 @@ namespace CreBINCD
         {
             if (IsProcessing)
             {
-                var result = MessageBox.Show(this, "処理を停止しますか?", "確認", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                var result = MessageBox.Show(this, "Do you want to stop the process?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (result == DialogResult.Yes)
                 {
                     CancelRequested = true;
