@@ -1,12 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace CreBINCD
 {
     public partial class MainForm : Form
     {
+        private LogForm logForm;
+        private volatile bool _isProcessing;
+
         public MainForm()
         {
             InitializeComponent();
@@ -119,7 +125,7 @@ namespace CreBINCD
             }
         }
 
-        private void btnBuild_Click(object sender, EventArgs e)
+        private async void btnBuild_Click(object sender, EventArgs e)
         {
             if (lstFiles.Items.Count == 0)
             {
@@ -136,40 +142,108 @@ namespace CreBINCD
             string binPath = txtPath.Text;
             string cuePath = Path.ChangeExtension(binPath, ".cue");
 
-            txtLog.AppendText($"BIN: {binPath}\r\n");
-            txtLog.AppendText($"CUE: {cuePath}\r\n");
+            // Snapshot UI data before background work
+            var fileList = lstFiles.Items.Cast<object>().Select(o => o.ToString()).ToList();
 
-            var wavFiles = new List<string>();
-
-            foreach (string path in lstFiles.Items)
+            // Create and show log window
+            if (logForm == null || logForm.IsDisposed)
             {
-                txtLog.AppendText($"Converting: {path}\r\n");
-                string wav = AudioConverter.ConvertToWav(path);
-                wavFiles.Add(wav);
-                txtLog.AppendText($" → WAV: {wav}\r\n");
+                logForm = new LogForm();
             }
+            logForm.IsProcessing = true;
+            logForm.Show(this);
 
-            BinCueBuilder.Build(binPath, cuePath, wavFiles);
+            _isProcessing = true;
 
-            txtLog.AppendText("BIN/CUE creation complete\r\n");
+            bool success = true;
+            string finishMessage = "The creation of the BIN/CUE files is complete.";
 
-            foreach (string wav in wavFiles)
+            try
             {
-                if (wav.EndsWith(".tmp.wav", StringComparison.OrdinalIgnoreCase))
+                var wavFiles = new List<string>();
+
+                await Task.Run(() =>
                 {
+                    // Conversion phase
+                    foreach (var path in fileList)
+                    {
+                        if (logForm.CancelRequested)
+                        {
+                            success = false;
+                            finishMessage = "The transaction has been canceled";
+                            return;
+                        }
+
+                        logForm.AppendLog($"Converting: {path}\r\n");
+                        string wav = AudioConverter.ConvertToWav(path);
+                        wavFiles.Add(wav);
+                        logForm.AppendLog($" → WAV: {wav}\r\n");
+                    }
+
+                    if (logForm.CancelRequested)
+                    {
+                        success = false;
+                        finishMessage = "The transaction has been canceled";
+                        return;
+                    }
+
+                    // Build BIN/CUE
                     try
                     {
-                        File.Delete(wav);
-                        txtLog.AppendText($"Delete: {wav}\r\n");
+                        logForm.AppendLog($"BIN: {binPath}\r\n");
+                        logForm.AppendLog($"CUE: {cuePath}\r\n");
+                        BinCueBuilder.Build(binPath, cuePath, wavFiles);
+                        logForm.AppendLog("BIN/CUE creation complete\r\n");
                     }
                     catch (Exception ex)
                     {
-                        txtLog.AppendText($"Deletion failed: {wav} ({ex.Message})\r\n");
+                        success = false;
+                        finishMessage = $"An error has occurred: {ex.Message}";
+                        logForm.AppendLog($"Error: {ex.Message}\r\n");
+                        return;
                     }
+
+                    // Cleanup phase
+                    foreach (var wav in wavFiles)
+                    {
+                        if (logForm.CancelRequested)
+                        {
+                            success = false;
+                            finishMessage = "The transaction has been canceled";
+                            return;
+                        }
+
+                        if (wav.EndsWith(".tmp.wav", StringComparison.OrdinalIgnoreCase))
+                        {
+                            try
+                            {
+                                File.Delete(wav);
+                                logForm.AppendLog($"Delete: {wav}\r\n");
+                            }
+                            catch (Exception ex)
+                            {
+                                logForm.AppendLog($"Deletion failed: {wav} ({ex.Message})\r\n");
+                            }
+                        }
+                    }
+                });
+            }
+            finally
+            {
+                _isProcessing = false;
+                if (logForm != null && !logForm.IsDisposed)
+                {
+                    logForm.IsProcessing = false;
                 }
             }
 
-            MessageBox.Show("The creation of the BIN/CUE files is complete.");
+            // Show finish dialog and then close log window
+            MessageBox.Show(this, finishMessage, success ? "Success" : "Cancelled/Failed", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            if (logForm != null && !logForm.IsDisposed)
+            {
+                logForm.Close();
+            }
         }
     }
 }

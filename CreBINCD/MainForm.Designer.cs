@@ -35,7 +35,6 @@
             this.txtPath = new System.Windows.Forms.TextBox();
             this.btnBrowse = new System.Windows.Forms.Button();
             this.btnBuild = new System.Windows.Forms.Button();
-            this.txtLog = new System.Windows.Forms.TextBox();
             this.btnUp = new System.Windows.Forms.Button();
             this.btnDown = new System.Windows.Forms.Button();
             this.SuspendLayout();
@@ -80,11 +79,6 @@
             this.btnBuild.UseVisualStyleBackColor = true;
             this.btnBuild.Click += new System.EventHandler(this.btnBuild_Click);
             // 
-            // txtLog
-            // 
-            resources.ApplyResources(this.txtLog, "txtLog");
-            this.txtLog.Name = "txtLog";
-            // 
             // btnUp
             // 
             resources.ApplyResources(this.btnUp, "btnUp");
@@ -105,7 +99,6 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.btnDown);
             this.Controls.Add(this.btnUp);
-            this.Controls.Add(this.txtLog);
             this.Controls.Add(this.btnBuild);
             this.Controls.Add(this.btnBrowse);
             this.Controls.Add(this.txtPath);
@@ -129,7 +122,6 @@
         private System.Windows.Forms.TextBox txtPath;
         private System.Windows.Forms.Button btnBrowse;
         private System.Windows.Forms.Button btnBuild;
-        private System.Windows.Forms.TextBox txtLog;
         private System.Windows.Forms.Button btnUp;
         private System.Windows.Forms.Button btnDown;
     }
