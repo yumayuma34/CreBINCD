@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -11,7 +10,6 @@ namespace CreBINCD
     public partial class MainForm : Form
     {
         private LogForm logForm;
-        private volatile bool _isProcessing;
 
         public MainForm()
         {
@@ -81,9 +79,10 @@ namespace CreBINCD
             if (lstFiles.SelectedItems.Count == 0)
                 return;
 
-            while (lstFiles.SelectedItems.Count > 0)
+            var indices = lstFiles.SelectedIndices.Cast<int>().OrderByDescending(i => i).ToArray();
+            foreach (var idx in indices)
             {
-                lstFiles.Items.Remove(lstFiles.SelectedItems[0]);
+                lstFiles.Items.RemoveAt(idx);
             }
         }
 
@@ -103,25 +102,70 @@ namespace CreBINCD
 
         private void btnUp_Click(object sender, EventArgs e)
         {
-            int index = lstFiles.SelectedIndex;
-            if (index > 0)
+            var items = lstFiles.Items.Cast<object>().ToList();
+            var sel = new bool[items.Count];
+            var indices = lstFiles.SelectedIndices.Cast<int>().ToArray();
+            if (indices.Length == 0) return;
+            foreach (var i in indices) sel[i] = true;
+
+            for (int i = 1; i < items.Count; i++)
             {
-                var item = lstFiles.Items[index];
-                lstFiles.Items.RemoveAt(index);
-                lstFiles.Items.Insert(index - 1, item);
-                lstFiles.SelectedIndex = index - 1;
+                if (sel[i] && !sel[i - 1])
+                {
+                    var tmp = items[i - 1];
+                    items[i - 1] = items[i];
+                    items[i] = tmp;
+                    sel[i - 1] = true;
+                    sel[i] = false;
+                }
+            }
+
+            lstFiles.BeginUpdate();
+            try
+            {
+                lstFiles.Items.Clear();
+                foreach (var it in items) lstFiles.Items.Add(it);
+                for (int i = 0; i < sel.Length; i++)
+                {
+                    lstFiles.SetSelected(i, sel[i]);
+                }
+            }
+            finally
+            {
+                lstFiles.EndUpdate();
             }
         }
 
         private void btnDown_Click(object sender, EventArgs e)
         {
-            int index = lstFiles.SelectedIndex;
-            if (index >= 0 && index < lstFiles.Items.Count - 1)
+            var items = lstFiles.Items.Cast<object>().ToList();
+            var sel = new bool[items.Count];
+            var indices = lstFiles.SelectedIndices.Cast<int>().ToArray();
+            if (indices.Length == 0) return;
+            foreach (var i in indices) sel[i] = true;
+
+            for (int i = items.Count - 2; i >= 0; i--)
             {
-                var item = lstFiles.Items[index];
-                lstFiles.Items.RemoveAt(index);
-                lstFiles.Items.Insert(index + 1, item);
-                lstFiles.SelectedIndex = index + 1;
+                if (sel[i] && !sel[i + 1])
+                {
+                    var tmp = items[i + 1];
+                    items[i + 1] = items[i];
+                    items[i] = tmp;
+                    sel[i + 1] = true;
+                    sel[i] = false;
+                }
+            }
+
+            lstFiles.BeginUpdate();
+            try
+            {
+                lstFiles.Items.Clear();
+                foreach (var it in items) lstFiles.Items.Add(it);
+                for (int i = 0; i < sel.Length; i++) lstFiles.SetSelected(i, sel[i]);
+            }
+            finally
+            {
+                lstFiles.EndUpdate();
             }
         }
 
@@ -142,18 +186,14 @@ namespace CreBINCD
             string binPath = txtPath.Text;
             string cuePath = Path.ChangeExtension(binPath, ".cue");
 
-            // Snapshot UI data before background work
             var fileList = lstFiles.Items.Cast<object>().Select(o => o.ToString()).ToList();
 
-            // Create and show log window
             if (logForm == null || logForm.IsDisposed)
             {
                 logForm = new LogForm();
             }
             logForm.IsProcessing = true;
             logForm.Show(this);
-
-            _isProcessing = true;
 
             bool success = true;
             string finishMessage = "The creation of the BIN/CUE files is complete.";
@@ -164,30 +204,62 @@ namespace CreBINCD
 
                 await Task.Run(() =>
                 {
-                    // Conversion phase
+                    Action cleanupTempWavs = () =>
+                    {
+                        foreach (var w in wavFiles.ToList())
+                        {
+                            try
+                            {
+                                if (w != null && w.EndsWith(".tmp.wav", System.StringComparison.OrdinalIgnoreCase) && File.Exists(w))
+                                {
+                                    File.Delete(w);
+                                    logForm.AppendLog($"Delete: {w}\r\n");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                logForm.AppendLog($"Deletion failed: {w} ({ex.Message})\r\n");
+                            }
+                        }
+                    };
+
                     foreach (var path in fileList)
                     {
                         if (logForm.CancelRequested)
                         {
                             success = false;
                             finishMessage = "The transaction has been canceled";
+                            cleanupTempWavs();
                             return;
                         }
 
-                        logForm.AppendLog($"Converting: {path}\r\n");
-                        string wav = AudioConverter.ConvertToWav(path);
-                        wavFiles.Add(wav);
-                        logForm.AppendLog($" → WAV: {wav}\r\n");
+                        string wav;
+                        var ext = Path.GetExtension(path);
+                        if (ext != null && ext.Equals(".wav", System.StringComparison.OrdinalIgnoreCase))
+                        {
+                            wav = path;
+                            logForm.AppendLog($"Using WAV: {path}\r\n");
+                        }
+                        else
+                        {
+                            logForm.AppendLog($"Converting: {path}\r\n");
+                            wav = AudioConverter.ConvertToWav(path);
+                            logForm.AppendLog($" → WAV: {wav}\r\n");
+                        }
+                        if (!wavFiles.Contains(wav))
+                        {
+                            wavFiles.Add(wav);
+                        }
                     }
 
                     if (logForm.CancelRequested)
                     {
                         success = false;
                         finishMessage = "The transaction has been canceled";
+                        cleanupTempWavs();
                         return;
                     }
 
-                    // Build BIN/CUE
                     try
                     {
                         logForm.AppendLog($"BIN: {binPath}\r\n");
@@ -200,20 +272,21 @@ namespace CreBINCD
                         success = false;
                         finishMessage = $"An error has occurred: {ex.Message}";
                         logForm.AppendLog($"Error: {ex.Message}\r\n");
+                        cleanupTempWavs();
                         return;
                     }
 
-                    // Cleanup phase
                     foreach (var wav in wavFiles)
                     {
                         if (logForm.CancelRequested)
                         {
                             success = false;
                             finishMessage = "The transaction has been canceled";
+                            cleanupTempWavs();
                             return;
                         }
 
-                        if (wav.EndsWith(".tmp.wav", StringComparison.OrdinalIgnoreCase))
+                        if (wav.EndsWith(".tmp.wav", System.StringComparison.OrdinalIgnoreCase))
                         {
                             try
                             {
@@ -230,14 +303,12 @@ namespace CreBINCD
             }
             finally
             {
-                _isProcessing = false;
                 if (logForm != null && !logForm.IsDisposed)
                 {
                     logForm.IsProcessing = false;
                 }
             }
 
-            // Show finish dialog and then close log window
             MessageBox.Show(this, finishMessage, success ? "Success" : "Cancelled/Failed", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             if (logForm != null && !logForm.IsDisposed)
