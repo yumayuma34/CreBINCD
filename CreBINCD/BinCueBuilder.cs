@@ -68,7 +68,13 @@ public static class BinCueBuilder
                 binStream.Write(padded, 0, padded.Length);
 
                 cueLines.Add($"  TRACK {(i + 1):D2} AUDIO");
-                cueLines.Add($"    TITLE \"{Path.GetFileNameWithoutExtension(wavFiles[i])}\"");
+                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(wavFiles[i]);
+                string title = fileNameWithoutExt;
+                if (title.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase))
+                {
+                    title = Path.GetFileNameWithoutExtension(title);
+                }
+                cueLines.Add($"    TITLE \"{title}\"");
                 cueLines.Add($"    INDEX 01 {CalculateIndex(offset)}");
 
                 offset += (int)Math.Ceiling(frames / 1.0);
