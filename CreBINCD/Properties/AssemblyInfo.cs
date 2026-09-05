@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // 制御されます。アセンブリに関連付けられている情報を変更するには、
 // これらの属性値を変更します。
 [assembly: AssemblyTitle("CreBINCD")]
-[assembly: AssemblyDescription("Create BIN audio CD files from WAV or MP3 files.")]
+[assembly: AssemblyDescription("WAVまたはMP3ファイルなどからBIN/CUE形式のオーディオCDファイルを作成します。")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Henojin Group")]
+[assembly: AssemblyCompany("Henojin.org")]
 [assembly: AssemblyProduct("CreBINCD")]
-[assembly: AssemblyCopyright("Copyright © 2026 Henojin Group")]
+[assembly: AssemblyCopyright("Copyright © 2026 Henojin.org")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      ビルド番号
 //      リビジョン
 //
-[assembly: AssemblyVersion("1.0.0.1")]
-[assembly: AssemblyFileVersion("1.0.0.1")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]

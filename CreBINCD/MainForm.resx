@@ -153,7 +153,7 @@
     <value>2</value>
   </data>
   <data name="btnAddFiles.Text" xml:space="preserve">
-    <value>Add File</value>
+    <value>ファイル追加</value>
   </data>
   <data name="&gt;&gt;btnAddFiles.Name" xml:space="preserve">
     <value>btnAddFiles</value>
@@ -177,7 +177,7 @@
     <value>3</value>
   </data>
   <data name="btnRemoveSelected.Text" xml:space="preserve">
-    <value>Deselect</value>
+    <value>選択解除</value>
   </data>
   <data name="&gt;&gt;btnRemoveSelected.Name" xml:space="preserve">
     <value>btnRemoveSelected</value>
@@ -222,7 +222,7 @@
     <value>5</value>
   </data>
   <data name="btnBrowse.Text" xml:space="preserve">
-    <value>Save to</value>
+    <value>保存先</value>
   </data>
   <data name="&gt;&gt;btnBrowse.Name" xml:space="preserve">
     <value>btnBrowse</value>
@@ -246,7 +246,7 @@
     <value>6</value>
   </data>
   <data name="btnBuild.Text" xml:space="preserve">
-    <value>Build BIN/CUE</value>
+    <value>BIN/CUE作成</value>
   </data>
   <data name="&gt;&gt;btnBuild.Name" xml:space="preserve">
     <value>btnBuild</value>

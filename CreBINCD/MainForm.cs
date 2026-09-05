@@ -43,11 +43,11 @@ namespace CreBINCD
             if (!File.Exists(ffmpegLocal) && !IsFFmpegAvailable())
             {
                 MessageBox.Show(
-                    "FFmpeg cannot be found\n\n" +
-                    "Please do one of the following:\n" +
-                    "・Place ffmpeg.exe in the same folder as CreBINCD.exe\n" +
-                    "・Install using `winget install --id=Gyan.FFmpeg -e`",
-                    "FFmpeg is required",
+                    "FFmpegが見つかりません\n\n" +
+                    "以下の方法などによってFFmpegを導入する必要があります：\n" +
+                    "・ffmpeg.exeをCreBINCD.exeと同じフォルダに配置する\n" +
+                    "・\"winget install --id=Gyan.FFmpeg -e\" を使用してインストールする",
+                    "FFmpegが必要です",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
                 );
@@ -173,13 +173,13 @@ namespace CreBINCD
         {
             if (lstFiles.Items.Count == 0)
             {
-                MessageBox.Show("No files have been added");
+                MessageBox.Show("1つもファイルが追加されていません");
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(txtPath.Text))
             {
-                MessageBox.Show("Please specify the output destination");
+                MessageBox.Show("ファイルの出力先を指定してください");
                 return;
             }
 
@@ -196,7 +196,7 @@ namespace CreBINCD
             logForm.Show(this);
 
             bool success = true;
-            string finishMessage = "The creation of the BIN/CUE files is complete.";
+            string finishMessage = "BIN/CUEファイルの作成が完了しました。";
 
             try
             {
@@ -213,12 +213,12 @@ namespace CreBINCD
                                 if (w != null && w.EndsWith(".tmp.wav", System.StringComparison.OrdinalIgnoreCase) && File.Exists(w))
                                 {
                                     File.Delete(w);
-                                    logForm.AppendLog($"Delete: {w}\r\n");
+                                    logForm.AppendLog($"削除: {w}\r\n");
                                 }
                             }
                             catch (Exception ex)
                             {
-                                logForm.AppendLog($"Deletion failed: {w} ({ex.Message})\r\n");
+                                logForm.AppendLog($"削除に失敗しました: {w} ({ex.Message})\r\n");
                             }
                         }
                     };
@@ -228,7 +228,7 @@ namespace CreBINCD
                         if (logForm.CancelRequested)
                         {
                             success = false;
-                            finishMessage = "The transaction has been canceled";
+                            finishMessage = "キャンセルされました";
                             cleanupTempWavs();
                             return;
                         }
@@ -238,11 +238,11 @@ namespace CreBINCD
                         if (ext != null && ext.Equals(".wav", System.StringComparison.OrdinalIgnoreCase))
                         {
                             wav = path;
-                            logForm.AppendLog($"Using WAV: {path}\r\n");
+                            logForm.AppendLog($"WAVを使用: {path}\r\n");
                         }
                         else
                         {
-                            logForm.AppendLog($"Converting: {path}\r\n");
+                            logForm.AppendLog($"変換中: {path}\r\n");
                             wav = AudioConverter.ConvertToWav(path);
                             logForm.AppendLog($" → WAV: {wav}\r\n");
                         }
@@ -255,7 +255,7 @@ namespace CreBINCD
                     if (logForm.CancelRequested)
                     {
                         success = false;
-                        finishMessage = "The transaction has been canceled";
+                        finishMessage = "キャンセルされました";
                         cleanupTempWavs();
                         return;
                     }
@@ -265,13 +265,13 @@ namespace CreBINCD
                         logForm.AppendLog($"BIN: {binPath}\r\n");
                         logForm.AppendLog($"CUE: {cuePath}\r\n");
                         BinCueBuilder.Build(binPath, cuePath, wavFiles);
-                        logForm.AppendLog("BIN/CUE creation complete\r\n");
+                        logForm.AppendLog("BIN/CUEファイルの作成が完了しました\r\n");
                     }
                     catch (Exception ex)
                     {
                         success = false;
-                        finishMessage = $"An error has occurred: {ex.Message}";
-                        logForm.AppendLog($"Error: {ex.Message}\r\n");
+                        finishMessage = $"エラーが発生しました: {ex.Message}";
+                        logForm.AppendLog($"エラー: {ex.Message}\r\n");
                         cleanupTempWavs();
                         return;
                     }
@@ -281,7 +281,7 @@ namespace CreBINCD
                         if (logForm.CancelRequested)
                         {
                             success = false;
-                            finishMessage = "The transaction has been canceled";
+                            finishMessage = "キャンセルされました";
                             cleanupTempWavs();
                             return;
                         }
@@ -291,11 +291,11 @@ namespace CreBINCD
                             try
                             {
                                 File.Delete(wav);
-                                logForm.AppendLog($"Delete: {wav}\r\n");
+                                logForm.AppendLog($"削除: {wav}\r\n");
                             }
                             catch (Exception ex)
                             {
-                                logForm.AppendLog($"Deletion failed: {wav} ({ex.Message})\r\n");
+                                logForm.AppendLog($"削除に失敗しました: {wav} ({ex.Message})\r\n");
                             }
                         }
                     }
@@ -309,7 +309,7 @@ namespace CreBINCD
                 }
             }
 
-            MessageBox.Show(this, finishMessage, success ? "Success" : "Cancelled/Failed", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(this, finishMessage, success ? "成功" : "キャンセル/失敗", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             if (logForm != null && !logForm.IsDisposed)
             {
